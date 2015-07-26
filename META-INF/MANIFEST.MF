@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Eclipse
+Bundle-SymbolicName: cz.vutbr.fit.xhriba01.bc.eclipse;singleton:=true
+Bundle-Version: 1.0.0.qualifier
+Bundle-Activator: cz.vutbr.fit.xhriba01.bc.eclipse.BcPlugin
+Bundle-Vendor: Jaromír Hřibal
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.ui.workbench,
+ org.eclipse.jface.text,
+ org.eclipse.ui.editors,
+ org.eclipse.jdt.core,
+ org.eclipse.core.resources;bundle-version="3.9.1",
+ org.eclipse.core.jobs,
+ org.eclipse.ui.views;bundle-version="3.7.0",
+ asmlib;bundle-version="1.0.0",
+ org.eclipse.jdt.ui;bundle-version="3.10.2",
+ bclib;bundle-version="1.0.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Bundle-ClassPath: lib/,
+ .
