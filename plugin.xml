@@ -15,7 +15,6 @@
       <view
             category="cz.vutbr.fit.xhriba01.bc.eclipse"
             class="cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView"
-            icon="icons/sample.gif"
             id="cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView"
             name="Bytecode">
       </view>

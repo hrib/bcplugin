@@ -2,6 +2,7 @@ package cz.vutbr.fit.xhriba01.bc.eclipse.ui;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Stack;
 
 import org.eclipse.jdt.core.ElementChangedEvent;
 import org.eclipse.jdt.core.ICompilationUnit;
@@ -49,40 +50,63 @@ public class BcUI implements IWindowListener {
 		
 		private IJavaElement fJavaElement;
 		
+		private void startRefresh(final IJavaElement javaElement) {
+				
+				PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+
+					@Override
+					public void run() {
+						
+						PlatformUI.getWorkbench().getDisplay().timerExec(2000, new Runnable() {
+							
+							@Override
+							public void run() {
+								State.this.refresh(javaElement);
+							}
+							
+						});
+					}
+					
+				});
+			
+		}
+		
 		@Override
 		public void elementChanged(ElementChangedEvent event) {
 			
+			if (event.getType() != ElementChangedEvent.POST_CHANGE) {
+				return;
+			}
+			
 			IJavaElementDelta delta = event.getDelta();
 			
-			CompilationUnit cu = delta.getCompilationUnitAST();
+			Stack<IJavaElementDelta> deltaStack = new Stack<IJavaElementDelta>();
 			
-			if (cu != null) {
-					
-				final IJavaElement javaElement = cu.getJavaElement();
+			deltaStack.push(delta);
+			
+			do {
 				
-				if (javaElement != null) {
+				IJavaElementDelta popedDelta = deltaStack.pop();
+				
+				IJavaElement el = popedDelta.getElement();
+				
+				if (el != null) {
 					
-					synchronized(this) {
-					
-						if (javaElement.equals(fJavaElement)) {
+					synchronized (this) {
 						
-							PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
-
-								@Override
-								public void run() {
-									
-									State.this.refresh(javaElement);
-									
-								}
-								
-							});
-						
+						if (el.equals(fJavaElement)) {
+							startRefresh(el);
+							return;
 						}
-					}
 					
+					}
 				}
 				
-			}
+				for (IJavaElementDelta childDelta : popedDelta.getAffectedChildren()) {
+					deltaStack.add(childDelta);
+				}
+				
+			} while(!deltaStack.isEmpty());
 			
 		}
 		
@@ -249,7 +273,7 @@ public class BcUI implements IWindowListener {
 				return;
 			}
 			
-			fBytecodeView.setByJava(javaFile, classContainer, javaElement, editor);
+			fBytecodeView.setInput(javaFile, classContainer, javaElement, editor, null);
 			
 		}
 		
@@ -345,7 +369,16 @@ public class BcUI implements IWindowListener {
 				fJavaElement = null;
 	
 			}
-			
+			else {
+				
+				if (fBytecodeView != null) {
+				
+					if (partRef.getPart(false) == fBytecodeView.getJavaEditor()) {
+						fBytecodeView.clean();
+						fJavaElement = null;
+					}
+				}
+			}
 			
 		}
 

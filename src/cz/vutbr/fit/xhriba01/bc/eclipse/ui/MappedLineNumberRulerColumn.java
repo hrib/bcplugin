@@ -461,7 +461,11 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 		computeIndentations();
 		layout(false);
 	}
-
+	
+	public Map<Integer, Integer> getLineMap() {
+		return fLineMap;
+	}
+	
 	/**
 	 * Sets the foreground color of this column.
 	 *

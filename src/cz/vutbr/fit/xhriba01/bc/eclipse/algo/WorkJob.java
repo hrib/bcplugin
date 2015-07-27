@@ -30,16 +30,19 @@ public class WorkJob extends Job {
 	
 	private UserBytecode fBytecode;
 	
+	private Style fStyle;
+	
 	public BytecodeView getBytecodeView() {
 		return fBytecodeView;
 	}
 	
-	public WorkJob(String name, BytecodeView bytecodeView, IFile2 javaSource, IClassContainer classContainer, Map<String, Object> options) {
+	public WorkJob(String name, Style style, BytecodeView bytecodeView, IFile2 javaSource, IClassContainer classContainer, Map<String, Object> options) {
 		super(name);
 		fJavaSource = javaSource;
 		fOptions = options;
 		fClassContainer = classContainer;
 		fBytecodeView = bytecodeView;
+		fStyle = style;
 	}
 
 	@Override
@@ -59,15 +62,23 @@ public class WorkJob extends Job {
 		
 		Node node = classResult.getResultNode();
 		
-		fBytecode = new UserBytecode();
+		fBytecode = new UserBytecode(fStyle);
 		
 		NodeProcessor.process(node, fBytecode);
 		
 		return Status.OK_STATUS;
 	}
 	
+	public Style getStyle() {
+		return fStyle;
+	}
+	
 	public UserBytecode getUserBytecode() {
 		return fBytecode;
+	}
+	
+	public Result getBytecodeAlgorithmResult() {
+		return fResult;
 	}
 
 }
