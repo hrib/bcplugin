@@ -51,12 +51,19 @@ public class Style {
 	
 	public TextStyle COMMENT;
 	
+	public TextStyle OFFSET;
+	
+	public TextStyle ANNOTATION_KEYWORD;
+	
 	private Font fFont;
 	
 	private Color fSelectedLineColor;
 	
+	private Color fDefaultColor;
 	
 	private Color fBackground;
+	
+	private Color fLineNumberRulerColor;
 	
 	public Style() {
 		
@@ -72,16 +79,34 @@ public class Style {
 		
 		FontDescriptor baseDesc = FontDescriptor.createFrom(fFont); 
 				
+		fDefaultColor = jdtColors.getColor(PreferenceConstants.EDITOR_JAVA_DEFAULT_COLOR);
+		
 		FontDescriptor keywordDesc = baseDesc;
 		if (prefs.getBoolean(PreferenceConstants.EDITOR_JAVA_KEYWORD_BOLD)) {
 			keywordDesc = keywordDesc.setStyle(SWT.BOLD);
 		}
 		KEYWORD = new TextStyle();
 		KEYWORD.foreground = jdtColors.getColor(PreferenceConstants.EDITOR_JAVA_KEYWORD_COLOR);
-		KEYWORD.font = keywordDesc.createFont(PlatformUI.getWorkbench().getDisplay());
+		KEYWORD.font = keywordDesc.createFont(display);
 		
+		FontDescriptor offsetDesc = baseDesc;
+		offsetDesc = offsetDesc.setStyle(SWT.BOLD);
+		OFFSET = new TextStyle();
+		OFFSET.font = offsetDesc.createFont(display);
+		OFFSET.foreground = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
 		
 		INSTRUCTION = KEYWORD;
+		METHOD_ACCESS = KEYWORD;
+		ANNOTATION_KEYWORD = KEYWORD;
+		
+		FontDescriptor commentDesc = baseDesc;
+		if (prefs.getBoolean(PreferenceConstants.EDITOR_MULTI_LINE_COMMENT_BOLD)) {
+			commentDesc = commentDesc.setStyle(SWT.BOLD);
+		}
+		COMMENT = new TextStyle();
+		COMMENT.foreground = jdtColors.getColor(PreferenceConstants.EDITOR_MULTI_LINE_COMMENT_COLOR);
+		COMMENT.font = commentDesc.createFont(display);
+		
 		/*
 		INSTRUCTION = new TextStyle();
 		INSTRUCTION.foreground = jdtColors.getColor(PreferenceConstants.EDITOR_JAVA_KEYWORD_COLOR);
@@ -100,8 +125,16 @@ public class Style {
 			fBackground = new Color(display, PreferenceConverter.getColor(prefs, AbstractDecoratedTextEditor.PREFERENCE_COLOR_BACKGROUND));
 		}
 				
+		fLineNumberRulerColor = new Color(display, PreferenceConverter.getColor(prefs, AbstractDecoratedTextEditorPreferenceConstants.EDITOR_LINE_NUMBER_RULER_COLOR));
 		
-		
+	}
+	
+	public Color getLineNumberRulerColor() {
+		return fLineNumberRulerColor;
+	}
+	
+	public Color getDefaultColor() {
+		return fDefaultColor;
 	}
 	
 	public Color getSelectedLineBackgroundColor() {

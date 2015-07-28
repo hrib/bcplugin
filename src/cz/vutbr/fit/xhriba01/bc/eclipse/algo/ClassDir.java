@@ -3,7 +3,7 @@ package cz.vutbr.fit.xhriba01.bc.eclipse.algo;
 import org.eclipse.core.resources.IContainer;
 
 import cz.vutbr.fit.xhriba01.bc.lib.IClassContainer;
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 
 public class ClassDir implements IClassContainer {
 	
@@ -16,13 +16,13 @@ public class ClassDir implements IClassContainer {
 	}
 
 	@Override
-	public IFile2 getClassFile(String filename) {
+	public IFile getClassFile(String filename) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public IFile2[] getClassFiles() {
+	public IFile[] getClassFiles() {
 		// TODO Auto-generated method stub
 		return null;
 	}

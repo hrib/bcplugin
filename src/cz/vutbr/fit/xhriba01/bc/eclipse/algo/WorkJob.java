@@ -11,14 +11,14 @@ import cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView;
 import cz.vutbr.fit.xhriba01.bc.lib.BytecodeAlgorithm;
 import cz.vutbr.fit.xhriba01.bc.lib.ClassSourceResult;
 import cz.vutbr.fit.xhriba01.bc.lib.IClassContainer;
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 import cz.vutbr.fit.xhriba01.bc.lib.Node;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeProcessor;
 import cz.vutbr.fit.xhriba01.bc.lib.Result;
 
 public class WorkJob extends Job {
 	
-	private IFile2 fJavaSource;
+	private IFile fJavaSource;
 	
 	private Map<String, Object> fOptions;
 	
@@ -36,7 +36,7 @@ public class WorkJob extends Job {
 		return fBytecodeView;
 	}
 	
-	public WorkJob(String name, Style style, BytecodeView bytecodeView, IFile2 javaSource, IClassContainer classContainer, Map<String, Object> options) {
+	public WorkJob(String name, Style style, BytecodeView bytecodeView, IFile javaSource, IClassContainer classContainer, Map<String, Object> options) {
 		super(name);
 		fJavaSource = javaSource;
 		fOptions = options;

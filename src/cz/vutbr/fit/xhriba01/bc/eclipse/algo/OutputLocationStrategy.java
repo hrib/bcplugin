@@ -13,13 +13,13 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
 import cz.vutbr.fit.xhriba01.bc.lib.BinaryName;
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 import cz.vutbr.fit.xhriba01.bc.lib.StringFile;
 
 public class OutputLocationStrategy implements IJavaFromClassStrategy {
 
 	@Override
-	public IFile2 getJavaSource(IClassFile classFile) {
+	public IFile getJavaSource(IClassFile classFile) {
 		
 		IJavaProject javaProject = classFile.getJavaProject();
 		

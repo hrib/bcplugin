@@ -5,13 +5,13 @@ import org.eclipse.jdt.core.ISourceRange;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.SourceRange;
 
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 import cz.vutbr.fit.xhriba01.bc.lib.StringFile;
 
 public class SourceAttachmentStrategy implements IJavaFromClassStrategy {
 
 	@Override
-	public IFile2 getJavaSource(IClassFile classFile) {
+	public IFile getJavaSource(IClassFile classFile) {
 			
 		ISourceRange sourceRange = null;
 		

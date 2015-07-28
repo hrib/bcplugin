@@ -4,9 +4,9 @@ import java.io.InputStream;
 
 import org.eclipse.core.runtime.CoreException;
 
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 
-public class EclipseFileFile implements IFile2  {
+public class EclipseFileFile implements IFile  {
 
 	private org.eclipse.core.resources.IFile fEclipseFile; 
 	

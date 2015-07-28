@@ -6,7 +6,7 @@ import org.eclipse.core.runtime.CoreException;
 
 import cz.vutbr.fit.xhriba01.bc.lib.ByteFile;
 import cz.vutbr.fit.xhriba01.bc.lib.IClassContainer;
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 import cz.vutbr.fit.xhriba01.bc.lib.Utils;
 
 public class ResourceContainer implements IClassContainer {
@@ -18,7 +18,7 @@ public class ResourceContainer implements IClassContainer {
 	}
 	
 	@Override
-	public IFile2 getClassFile(String filename) {
+	public IFile getClassFile(String filename) {
 		
 		IResource member = fContainer.findMember(filename);
 		
@@ -48,7 +48,7 @@ public class ResourceContainer implements IClassContainer {
 	}
 
 	@Override
-	public IFile2[] getClassFiles() {
+	public IFile[] getClassFiles() {
 		
 		return null;
 		

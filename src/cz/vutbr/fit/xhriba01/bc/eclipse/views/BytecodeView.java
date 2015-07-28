@@ -42,7 +42,7 @@ import cz.vutbr.fit.xhriba01.bc.eclipse.algo.WorkJobListener;
 import cz.vutbr.fit.xhriba01.bc.eclipse.ui.BytecodeViewer;
 import cz.vutbr.fit.xhriba01.bc.eclipse.ui.MappedLineNumberRulerColumn;
 import cz.vutbr.fit.xhriba01.bc.lib.IClassContainer;
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 import cz.vutbr.fit.xhriba01.bc.lib.Result;
 import cz.vutbr.fit.xhriba01.bc.lib.Utils;
 
@@ -164,7 +164,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		fBytecodeViewer.setDocument(new Document(message));
 	}
 	
-	public void setInput(IFile2 javaSource, IClassContainer classContainer, IJavaElement javaElement, IEditorPart editor, Map<String, Object> options) {
+	public void setInput(IFile javaSource, IClassContainer classContainer, IJavaElement javaElement, IEditorPart editor, Map<String, Object> options) {
 		
 		if (fDisposed) {
 			return;
@@ -216,7 +216,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 		fBytecodeViewer = new BytecodeViewer(parent);
 		
-		fMappedLineNumberRulerColumn = new MappedLineNumberRulerColumn();
+		fMappedLineNumberRulerColumn = new MappedLineNumberRulerColumn(this);
 		
 		fBytecodeViewer.addVerticalRulerColumn(fMappedLineNumberRulerColumn);
 		
@@ -224,11 +224,11 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 		fStyle = StyleManager.getDefault().getStyle();
 		
-		fBytecodeViewer.getTextWidget().setFont(fStyle.getFont());
-		
 		fBytecodeViewer.getTextWidget().setEditable(false);
 		
 		this.setTitleImage(JavaUI.getSharedImages().getImage(ISharedImages.IMG_OBJS_CFILE));
+		
+		initUIStyle();
 		
 		fBytecodeViewer.getTextWidget().addMouseListener(new MouseListener() {
 			
@@ -255,6 +255,18 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 			}
 			
 		});
+	}
+	
+	private void initUIStyle() {
+		fBytecodeViewer.getTextWidget().setFont(fStyle.getFont());
+		
+		fBytecodeViewer.getTextWidget().setForeground(fStyle.getDefaultColor());
+		
+		fMappedLineNumberRulerColumn.setForeground(fStyle.getLineNumberRulerColor());
+		
+		fMappedLineNumberRulerColumn.setFont(fStyle.getFont());
+		
+		fMappedLineNumberRulerColumn.redraw();
 	}
 	
 	@Override
@@ -321,7 +333,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 	}
 	
-	private void handleLineSelect(int line) {
+	public void handleLineSelect(int line) {
 		
 		Map<Integer, Integer> lineMap = fMappedLineNumberRulerColumn.getLineMap();
 		
@@ -370,7 +382,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 		fStyle = event.getNewStyle();
 		
-		fBytecodeViewer.getTextWidget().setFont(fStyle.getFont());
+		initUIStyle();
 		
 		if (fJob != null) {
 			

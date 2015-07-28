@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.text.IColorManager;
@@ -17,6 +18,7 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.TextStyle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.IincInsnNode;
@@ -45,6 +47,7 @@ import cz.vutbr.fit.xhriba01.bc.lib.NodeClass;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeField;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeInstruction;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeMethod;
+import cz.vutbr.fit.xhriba01.bc.lib.Utils;
 
 public class UserBytecode extends AbstractNodeVisitor {
 	
@@ -94,7 +97,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		}
 		
 		public void addToLineMap(int bytecodeViewerLine, int javaEditorLine) {
-			if (javaEditorLine == -1) return;
+			if (javaEditorLine == Utils.INVALID_LINE) return;
 			fLineMap.put(bytecodeViewerLine, javaEditorLine);
 			if (javaEditorLine > fMaxLineNumber) {
 				fMaxLineNumber = javaEditorLine;
@@ -420,7 +423,20 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		
-		fDocument.addColumn(STYLE.CLASS_NAME, nodeClass.getAsmClassNode().name);
+		ClassNode classNode = nodeClass.getAsmClassNode();
+		
+		int access = classNode.access;
+		
+		TextStyle nameStyle = STYLE.CLASS_NAME;
+		
+		if (Flags.isAnnotation(access)) {
+			fDocument.add(STYLE.ANNOTATION_KEYWORD, "@interface");
+			fDocument.add(" ");
+		}
+		
+		fDocument.addColumn(nameStyle, nodeClass.getAsmClassNode().name);
+		
+		fDocument.addToLineMap(nodeClass.getSourceLine());
 		
 		fDocument.startContext();
 		
@@ -462,11 +478,89 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.add(STYLE.METHOD_NAME, nodeMethod.getAsmMethodNode().name);
 		
-		fDocument.addToLineMap(nodeMethod.getStartLine());
+		fDocument.addToLineMap(nodeMethod.getSourceLine());
 		
 		fDocument.addMethodParameters(nodeMethod);
 		
 		fDocument.startContext();
+		
+		addTryCatchBlocks(nodeMethod);
+		
+		addLocalVariables(nodeMethod);
+	}
+	
+	private String formatOffset(int offset) {
+		return "[" + Integer.toString(offset) + "]";
+	}
+	
+	private void addLocalVariables(NodeMethod nodeMethod) {
+		
+		MethodNode asm = nodeMethod.getAsmMethodNode();
+		
+		List<LocalVariableNode> vars = asm.localVariables;
+		
+		boolean added = false;
+		
+		for (LocalVariableNode var : vars) {
+			fDocument.startLine();
+			if (added == false) {
+				fDocument.add(STYLE.COMMENT, "// local variables");
+				fDocument.add(fDocument.LINE);
+				fDocument.startLine();
+			}
+			added = true;
+			fDocument.add("name: ");
+			fDocument.add(var.name);
+			fDocument.add(", ");
+			fDocument.add("index: ");
+			fDocument.add(Integer.toString(var.index));
+			fDocument.add(", ");
+			fDocument.add("start: ");
+			fDocument.add(STYLE.OFFSET, formatOffset(var.start.getLabel().getOffsetInMethod()));
+			fDocument.add(", ");
+			fDocument.add("end: ");
+			fDocument.add(STYLE.OFFSET, formatOffset(var.end.getLabel().getOffsetInMethod()));
+			fDocument.add(fDocument.LINE);
+		}
+		
+		if (added) {
+			fDocument.add(fDocument.LINE);
+		}
+	}
+	
+	private void addTryCatchBlocks(NodeMethod nodeMethod) {
+		
+		MethodNode asm = nodeMethod.getAsmMethodNode();
+		
+		List<TryCatchBlockNode> tcbs = asm.tryCatchBlocks;
+		
+		boolean added = false;
+		
+		for (TryCatchBlockNode tcb : tcbs) {
+			fDocument.startLine();
+			if (added == false) {
+				fDocument.add(STYLE.COMMENT, "// try catch finally bloky");
+				fDocument.add(fDocument.LINE);
+				fDocument.startLine();
+			}
+			added = true;
+			fDocument.add("TRYCATCHBLOCK: ");
+			fDocument.add("start: ");
+			fDocument.add(STYLE.OFFSET, formatOffset(tcb.start.getLabel().getOffsetInMethod()));
+			fDocument.add(", ");
+			fDocument.add("end: ");
+			fDocument.add(STYLE.OFFSET, formatOffset(tcb.end.getLabel().getOffsetInMethod()));
+			fDocument.add(", ");
+			fDocument.add("handler: ");
+			fDocument.add(STYLE.OFFSET, formatOffset(tcb.handler.getLabel().getOffsetInMethod()));
+			fDocument.add(fDocument.LINE);
+			
+		}
+		
+		if (added) {
+			fDocument.add(fDocument.LINE);
+		}
+		
 	}
 	
 	/**
@@ -500,6 +594,8 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.add(fDocument.SPACE);
 		
 		fDocument.add(STYLE.FIELD_NAME, nodeField.getAsmFieldNode().name);
+		
+		fDocument.addToLineMap(nodeField.getSourceLine());
 		
 		if (nodeField.hasChilds()) {
 			fDocument.add(fDocument.SPACE);
@@ -541,7 +637,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 	protected void visitLabelNode(LabelNode node, NodeInstruction nodeInstruction) {
 		
 		fDocument.startLine();
-		fDocument.add(Integer.toString(node.getLabel().getOffsetInMethod()) + ": ");
+		fDocument.add(STYLE.OFFSET, formatOffset(node.getLabel().getOffsetInMethod()));
 		fDocument.add(fDocument.LINE);
 		
 	}
@@ -578,7 +674,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(fDocument.SPACE);
 		fDocument.add("index: ");
 		fDocument.add(Integer.toString(insn.var));
@@ -705,7 +801,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(fDocument.LINE);
 		
 	}
@@ -725,7 +821,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(fDocument.SPACE + Integer.toString(insn.operand));
 		fDocument.add(fDocument.LINE);
 		
@@ -770,8 +866,9 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
-		fDocument.add(fDocument.SPACE + Integer.toString(insn.label.getLabel().getOffsetInMethod()));
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
+		fDocument.add(fDocument.SPACE);
+		fDocument.add(STYLE.OFFSET, "[" + Integer.toString(insn.label.getLabel().getOffsetInMethod()) + "]");
 		fDocument.add(fDocument.LINE);
 		
 	}
@@ -821,7 +918,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 			fDocument.add(")");
 		}
 		
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(fDocument.LINE);
 		
 	}
@@ -838,7 +935,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
 		fDocument.add(fDocument.SPACE);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.startContext();
 			
 		List<Integer> key = insn.keys;
@@ -897,7 +994,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
 		fDocument.add(fDocument.SPACE);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.addType(Type.getType(insn.desc));
 		fDocument.add(fDocument.SPACE + insn.dims);
 		fDocument.add(fDocument.LINE);
@@ -916,7 +1013,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
 		fDocument.add(fDocument.SPACE);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.startContext();
 			
 		int min = insn.min;
@@ -961,7 +1058,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
 		fDocument.add(fDocument.SPACE);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.addType(Type.getObjectType(insn.desc));
 		fDocument.add(fDocument.LINE);
 		
@@ -990,7 +1087,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
 		fDocument.add(fDocument.SPACE);
-		fDocument.addToLineMap(nodeInstruction.getStartLine());
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(Integer.toString(insn.var));
 		fDocument.add(fDocument.LINE);
 		

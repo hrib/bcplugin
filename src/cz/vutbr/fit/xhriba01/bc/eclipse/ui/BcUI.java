@@ -28,7 +28,7 @@ import cz.vutbr.fit.xhriba01.bc.eclipse.algo.IClassFromJavaStrategy;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.SourceDirectoryStrategy;
 import cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView;
 import cz.vutbr.fit.xhriba01.bc.lib.IClassContainer;
-import cz.vutbr.fit.xhriba01.bc.lib.IFile2;
+import cz.vutbr.fit.xhriba01.bc.lib.IFile;
 import cz.vutbr.fit.xhriba01.bc.lib.StringFile;
 
 public class BcUI implements IWindowListener {
@@ -261,7 +261,7 @@ public class BcUI implements IWindowListener {
 				return;
 			}
 			
-			IFile2 javaFile = null;
+			IFile javaFile = null;
 			
 			try {
 				

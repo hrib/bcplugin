@@ -53,6 +53,8 @@ import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.ILineRange;
 import org.eclipse.jface.text.source.IVerticalRulerColumn;
 
+import cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView;
+
 
 /**
  * A vertical ruler column displaying line numbers.
@@ -135,6 +137,8 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 		public void mouseDown(MouseEvent event) {
 			fParentRuler.setLocationOfLastMouseButtonActivity(event.x, event.y);
 			// see bug 45700
+			int clickedLine = fParentRuler.getLineOfLastMouseButtonActivity();
+			fBytecodeView.handleLineSelect(clickedLine);
 			if (event.button == 1) {
 				startSelecting((event.stateMask & SWT.SHIFT) != 0);
 			}
@@ -146,12 +150,13 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 		public void mouseDoubleClick(MouseEvent event) {
 			fParentRuler.setLocationOfLastMouseButtonActivity(event.x, event.y);
 			int clickedLine = fParentRuler.getLineOfLastMouseButtonActivity();
-			Integer sourceLine = fLineMap.get(new Integer(clickedLine + 1));
-			if (sourceLine != null) {
-				fCachedTextWidget.setLineBackground(clickedLine, 1, new Color(Display.getCurrent(), 240, 240, 240));
+			//Integer sourceLine = fLineMap.get(new Integer(clickedLine + 1));
+			//if (sourceLine != null) {
+				//fCachedTextWidget.setLineBackground(clickedLine, 1, new Color(Display.getCurrent(), 240, 240, 240));
 				//BcModel.getJavaSourceViewer().setTopIndex(sourceLine - 1);
 				//BcModel.getJavaSourceViewer().getTextWidget().setLineBackground(sourceLine-1, 1, new Color(Display.getCurrent(), 220, 220, 220));
-			}
+			//}
+			fBytecodeView.handleLineSelect(clickedLine);
 			stopSelecting();
 			stopAutoScroll();
 		}
@@ -440,18 +445,11 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 	};
 	/* @since 3.2 */
 	private MouseHandler fMouseHandler;
-
-
-	/**
-	 * Constructs a new vertical ruler column.
-	 */
-	public MappedLineNumberRulerColumn(HashMap<Integer, Integer> lineMap, int maxNumber) {
-		fLineMap = lineMap;
-		fMaxNumber = maxNumber;
-	}
 	
-	public MappedLineNumberRulerColumn() {
-		
+	private BytecodeView fBytecodeView;
+	
+	public MappedLineNumberRulerColumn(BytecodeView bytecodeView) {
+		fBytecodeView = bytecodeView;
 	}
 	
 	public void setLineMap(Map<Integer, Integer> lineMap, int maxNumber) {
