@@ -43,6 +43,7 @@ import org.objectweb.asm.util.Printer;
 
 import cz.vutbr.fit.xhriba01.bc.lib.AbstractNodeVisitor;
 import cz.vutbr.fit.xhriba01.bc.lib.DescriptorPart;
+import cz.vutbr.fit.xhriba01.bc.lib.Node;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeClass;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeField;
 import cz.vutbr.fit.xhriba01.bc.lib.NodeInstruction;
@@ -97,7 +98,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		}
 		
 		public void addToLineMap(int bytecodeViewerLine, int javaEditorLine) {
-			if (javaEditorLine == Utils.INVALID_LINE) return;
+			if (javaEditorLine == Utils.INVALID_LINE || javaEditorLine == 1) return;
 			fLineMap.put(bytecodeViewerLine, javaEditorLine);
 			if (javaEditorLine > fMaxLineNumber) {
 				fMaxLineNumber = javaEditorLine;
@@ -373,7 +374,11 @@ public class UserBytecode extends AbstractNodeVisitor {
 					add(SPACE);
 					add(STYLE.PARAMETER_NAME, parameters.get(i).name);
 				}
-				else if (locals != null && locals.size() > i) {
+				else if (locals != null && locals.size() > i+1) {
+					if ((locals.size() == 1) && (isStatic == 1)) {
+						add(")");
+						return;
+					}
 					LocalVariableNode localNode = locals.get(i + isStatic);
 					add(SPACE);
 					add(STYLE.PARAMETER_NAME, localNode.name);
@@ -387,22 +392,13 @@ public class UserBytecode extends AbstractNodeVisitor {
 			
 		}
 		
-		public void addSignature(MethodNode methodNode) {
-			
-			String signature = methodNode.signature;
-			
-			if (signature != null) {
-				add(STYLE.COMMENT, "// SIGNATURE: " + signature);
-				add(LINE);
-				startLine();
-			}
-			
-		}
 	}
  	
 	private UserBytecodeDocument fDocument;
 	
 	private Style STYLE;
+	
+	private boolean fWasClassVisited;
 	
 	public UserBytecode(Style style) {
 		
@@ -414,6 +410,153 @@ public class UserBytecode extends AbstractNodeVisitor {
 		return fDocument;
 	}
 	
+	private String formatAccessFlag(String access) {
+		return "0x" + access;
+	}
+	
+	private void addVisibleAccessFlags(ClassNode classNode) {
+		addVisibleAccessFlags(classNode.access, Node.TYPE.CLASS);
+	}
+	
+	private void addVisibleAccessFlags(MethodNode methodNode) {
+		addVisibleAccessFlags(methodNode.access, Node.TYPE.METHOD);
+	}
+	
+	private void addVisibleAccessFlags(FieldNode fieldNode) {
+		addVisibleAccessFlags(fieldNode.access, Node.TYPE.FIELD);
+	}
+	
+	private void addVisibleAccessFlags(int access, Node.TYPE type) {
+		
+		StringBuilder sb = new StringBuilder();
+		
+		if (Flags.isNative(access)) {
+			sb.append("native ");
+		}
+		if (Flags.isFinal(access)) {
+			sb.append("final ");
+		}
+		if (Flags.isPublic(access)) {
+			sb.append("public ");
+		}
+		if (Flags.isPrivate(access)) {
+			sb.append("private ");
+		}
+		if (Flags.isProtected(access)) {
+			sb.append("protected ");
+		}
+		if (Flags.isStatic(access)) {
+			sb.append("static ");
+		}
+		if (Flags.isAbstract(access)) {
+			sb.append("abstract ");
+		}
+		if (Flags.isSynchronized(access) && type == Node.TYPE.METHOD) {
+			sb.append("synchronized ");
+		}
+		fDocument.add(STYLE.KEYWORD, sb.toString());
+		
+	}
+	
+	public String getInterfaceTypeString(Type type) {
+		
+		DescriptorPart interfaceType =  DescriptorPart.fromAsmType(type);
+		
+		return interfaceType.toString();
+	}
+	
+	private String buildAllAccessFlags(ClassNode classNode) {
+		return buildAllAccessFlags(classNode.access, Node.TYPE.CLASS);
+	}
+	
+	private String buildAllAccessFlags(FieldNode fieldNode) {
+		return buildAllAccessFlags(fieldNode.access, Node.TYPE.FIELD);
+	}
+	
+	private String buildAllAccessFlags(MethodNode methodNode) {
+		return buildAllAccessFlags(methodNode.access, Node.TYPE.METHOD);
+	}
+	
+	private String buildAllAccessFlags(int access, Node.TYPE type) {
+		
+		List<String> flags = new ArrayList<String>();
+		
+		if (Flags.isPublic(access)) {
+			flags.add("ACC_PUBLIC");
+		}
+		if (Flags.isPrivate(access)) {
+			flags.add("ACC_PRIVATE");
+		}
+		if (Flags.isProtected(access)) {
+			flags.add("ACC_PROTECTED");
+		}
+		if (Flags.isStatic(access)) {
+			flags.add("ACC_STATIC");
+		}
+		if (Flags.isFinal(access)) {
+			flags.add("ACC_FINAL");
+		}
+		if (type == Node.TYPE.CLASS && Flags.isSuper(access)) {
+			flags.add("ACC_SUPER");
+		}
+		else {
+			if (Flags.isSynchronized(access)) {
+				flags.add("ACC_SYNCHRONIZED");
+			}
+		}
+		if (type == Node.TYPE.FIELD && Flags.isVolatile(access)) {
+			flags.add("ACC_VOLATILE");
+		}
+		else {
+			if (Flags.isBridge(access)) {
+				flags.add("ACC_BRIDGE");
+			}
+		}
+		if (type == Node.TYPE.METHOD && Flags.isVarargs(access)) {
+			flags.add("ACC_VARARGS");
+		}
+		else {
+			if (Flags.isTransient(access)) {
+				flags.add("ACC_TRANSIENT");
+			}
+		}
+		if (Flags.isNative(access)) {
+			flags.add("ACC_NATIVE");
+		}
+		if (Flags.isInterface(access)) {
+			flags.add("ACC_INTERFACE");
+		}
+		if (Flags.isAbstract(access)) {
+			flags.add("ACC_ABSTRACT");
+		}
+		if (Flags.isStrictfp(access)) {
+			flags.add("ACC_STRICTFP");
+		}
+		if (Flags.isSynthetic(access)) {
+			flags.add("ACC_SYNTHETIC");
+		}
+		if (Flags.isAnnotation(access)) {
+			flags.add("ACC_ANNOTATION");
+		}
+		if (Flags.isEnum(access)) {
+			flags.add("ACC_ENUM");
+		}
+		/*
+		if (Flags.isMandated(access)) {
+			flags.add("ACC_MANDATED");
+		}
+		*/
+		
+		
+		return StringUtils.join(flags, ", ");
+		
+	}
+	
+	private void addSignature(String signature) {
+		fDocument.add(STYLE.COMMENT, "// signature: " + signature);
+		fDocument.add(fDocument.LINE);
+		fDocument.startLine();
+	}
 	/**
 	 * Called for each node that represents a class (class, interface, enum).
 	 * 
@@ -421,26 +564,93 @@ public class UserBytecode extends AbstractNodeVisitor {
 	 */
 	public void visitNodeClass(NodeClass nodeClass) {
 		
-		fDocument.startLine();
-		
 		ClassNode classNode = nodeClass.getAsmClassNode();
 		
+		if (fWasClassVisited == false) {
+			
+			if (classNode.sourceFile != null) {
+				// source file on the top
+				fDocument.add(fDocument.LINE);
+				fDocument.startLine();
+				fDocument.add(STYLE.COMMENT, "// Source file: " + classNode.sourceFile);
+				fDocument.add(fDocument.LINE);
+				fDocument.add(fDocument.LINE);
+			}
+		}
+		
+		
+		fWasClassVisited = true;
+		
+		fDocument.startLine();
+		
 		int access = classNode.access;
+		
+		// access flag
+		fDocument.add(STYLE.COMMENT, "// access_flag: " + formatAccessFlag(Integer.toHexString(access)) + " (" + buildAllAccessFlags(classNode) + ")");
+		fDocument.add(fDocument.LINE);
+		fDocument.startLine();
+		
+		if (classNode.signature != null) {
+			// add signature
+			addSignature(classNode.signature);
+		}
+		
+		addVisibleAccessFlags(classNode);
 		
 		TextStyle nameStyle = STYLE.CLASS_NAME;
 		
 		if (Flags.isAnnotation(access)) {
 			fDocument.add(STYLE.ANNOTATION_KEYWORD, "@interface");
-			fDocument.add(" ");
+			fDocument.add(fDocument.SPACE);
+			nameStyle = STYLE.ANNOTATION_NAME;
+		}
+		else if (Flags.isEnum(access)) {
+			fDocument.add(STYLE.KEYWORD, "enum");
+			fDocument.add(fDocument.SPACE);
+		}
+		else {
+			fDocument.add(STYLE.KEYWORD, "class");
+			fDocument.add(fDocument.SPACE);
 		}
 		
 		fDocument.addColumn(nameStyle, nodeClass.getAsmClassNode().name);
 		
 		fDocument.addToLineMap(nodeClass.getSourceLine());
 		
+		if (classNode.superName != null) {
+			// add parent class
+			fDocument.add(fDocument.SPACE);
+			fDocument.add(STYLE.KEYWORD, "extends");
+			fDocument.add(fDocument.SPACE);
+			fDocument.addType(Type.getObjectType(classNode.superName));
+		}
+		
+		addInterfaces(classNode);
+		
 		fDocument.startContext();
 		
 		
+	}
+	
+	private void addInterfaces(ClassNode classNode) {
+		
+		
+		List<String> infs = classNode.interfaces;
+		
+		if (infs == null || infs.size() == 0) return;
+		
+		
+		fDocument.add(fDocument.SPACE);
+		
+		fDocument.add(STYLE.KEYWORD, "implements ");
+		
+		StringBuilder sb = new StringBuilder();
+		
+		for(String inf : infs) {
+			sb.append(getInterfaceTypeString(Type.getObjectType(inf)));
+		}
+		
+		fDocument.add(StringUtils.join(infs, ", "));
 	}
 	
 	/**
@@ -470,9 +680,17 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		//fDocument.addNonSourceMethodAccessFlags(methodNode.access);
 		
-		fDocument.addSignature(methodNode);
+		fDocument.add(STYLE.COMMENT, "// access_flag: " + formatAccessFlag(Integer.toHexString(methodNode.access)) + " (" + buildAllAccessFlags(methodNode) +")");
 		
-		fDocument.addColumn(STYLE.METHOD_ACCESS, fDocument.formatSourceMethodAccessFlags(methodNode.access));
+		fDocument.add(fDocument.LINE);
+		
+		fDocument.startLine();
+		
+		if (methodNode.signature != null) {
+			addSignature(methodNode.signature);
+		}
+		
+		addVisibleAccessFlags(methodNode);
 		
 		fDocument.addMethodReturnValue(methodNode);
 		
@@ -484,9 +702,27 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startContext();
 		
+		
+		addMaxAndLocalsInfo(methodNode);
+		
 		addTryCatchBlocks(nodeMethod);
 		
 		addLocalVariables(nodeMethod);
+	}
+	
+	private void addMaxAndLocalsInfo(MethodNode methodNode) {
+		
+		fDocument.startLine();
+		
+		fDocument.add(STYLE.KEY, "max stack size: ");
+		fDocument.add(Integer.toString(methodNode.maxStack));
+		fDocument.add(", ");
+		fDocument.add(STYLE.KEY, "max local var count: ");
+		fDocument.add(Integer.toString(methodNode.maxLocals));
+		
+		fDocument.add(fDocument.LINE);
+	
+		
 	}
 	
 	private String formatOffset(int offset) {
@@ -509,16 +745,16 @@ public class UserBytecode extends AbstractNodeVisitor {
 				fDocument.startLine();
 			}
 			added = true;
-			fDocument.add("name: ");
+			fDocument.add(STYLE.KEY, "name: ");
 			fDocument.add(var.name);
 			fDocument.add(", ");
-			fDocument.add("index: ");
+			fDocument.add(STYLE.KEY, "index: ");
 			fDocument.add(Integer.toString(var.index));
 			fDocument.add(", ");
-			fDocument.add("start: ");
+			fDocument.add(STYLE.KEY, "start: ");
 			fDocument.add(STYLE.OFFSET, formatOffset(var.start.getLabel().getOffsetInMethod()));
 			fDocument.add(", ");
-			fDocument.add("end: ");
+			fDocument.add(STYLE.KEY, "end: ");
 			fDocument.add(STYLE.OFFSET, formatOffset(var.end.getLabel().getOffsetInMethod()));
 			fDocument.add(fDocument.LINE);
 		}
@@ -545,13 +781,13 @@ public class UserBytecode extends AbstractNodeVisitor {
 			}
 			added = true;
 			fDocument.add("TRYCATCHBLOCK: ");
-			fDocument.add("start: ");
+			fDocument.add(STYLE.KEY, "start: ");
 			fDocument.add(STYLE.OFFSET, formatOffset(tcb.start.getLabel().getOffsetInMethod()));
 			fDocument.add(", ");
-			fDocument.add("end: ");
+			fDocument.add(STYLE.KEY, "end: ");
 			fDocument.add(STYLE.OFFSET, formatOffset(tcb.end.getLabel().getOffsetInMethod()));
 			fDocument.add(", ");
-			fDocument.add("handler: ");
+			fDocument.add(STYLE.KEY, "handler: ");
 			fDocument.add(STYLE.OFFSET, formatOffset(tcb.handler.getLabel().getOffsetInMethod()));
 			fDocument.add(fDocument.LINE);
 			
@@ -588,7 +824,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		FieldNode fieldNode = nodeField.getAsmFieldNode();
 		
-		fDocument.addColumn(fDocument.formatSourceFieldAccessFlags(fieldNode.access));
+		addVisibleAccessFlags(fieldNode);
 		
 		fDocument.addType(Type.getType(fieldNode.desc));
 		fDocument.add(fDocument.SPACE);
@@ -657,7 +893,16 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(fDocument.SPACE);
+		fDocument.addType(Type.getType(insn.desc));
+		fDocument.add(fDocument.SPACE);
+		fDocument.add(STYLE.FIELD_NAME, insn.name);
+		fDocument.add(";");
+		fDocument.add(fDocument.SPACE);
+		fDocument.add("(");
+		fDocument.add(insn.owner);
+		fDocument.add(")");
 		fDocument.add(fDocument.LINE);
 		
 	}
@@ -978,8 +1223,43 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.startLine();
 		fDocument.add(STYLE.INSTRUCTION, Printer.OPCODES[insn.getOpcode()]);
+		fDocument.addToLineMap(nodeInstruction.getSourceLine());
 		fDocument.add(fDocument.SPACE);
+		addMethodInsnMethod(insn);
 		fDocument.add(fDocument.LINE);
+		
+	}
+	
+	private void addMethodInsnMethod(MethodInsnNode insn) {
+		
+		Type returnType = Type.getReturnType(insn.desc);
+		
+		fDocument.addType(returnType);
+		fDocument.add(fDocument.SPACE);
+		fDocument.add(insn.name);
+		addMethodParameters(insn.desc);
+		fDocument.add(fDocument.SPACE);
+		fDocument.add("(");
+		fDocument.add(insn.owner);
+		fDocument.add(")");
+		
+	}
+	
+	private void addMethodParameters(String desc) {
+		
+		Type[] params = Type.getArgumentTypes(desc);
+		
+		fDocument.add("(");
+		
+		if (params.length > 0) {
+			for(int i = 0; i < params.length - 1; i++) {
+				fDocument.addType(params[i]);
+				fDocument.add(", ");
+			}
+			fDocument.addType(params[params.length-1]);
+		}
+		
+		fDocument.add(")");
 		
 	}
 	
@@ -1024,8 +1304,8 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		for (int i = 0; i < len; i++) {
 			fDocument.startLine();
-			fDocument.add("[" + (min+i) + "] : ");
-			fDocument.add(Integer.toString(labels.get(i).getLabel().getOffsetInMethod()));
+			fDocument.add(min+i + ": ");
+			fDocument.add(STYLE.OFFSET, formatOffset(labels.get(i).getLabel().getOffsetInMethod()));
 			fDocument.add(fDocument.LINE);
 		}
 		

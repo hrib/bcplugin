@@ -26,6 +26,7 @@ import org.eclipse.swt.events.MouseMoveListener;
 import org.eclipse.swt.events.PaintEvent;
 import org.eclipse.swt.events.PaintListener;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Cursor;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
@@ -450,6 +451,7 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 	
 	public MappedLineNumberRulerColumn(BytecodeView bytecodeView) {
 		fBytecodeView = bytecodeView;
+		
 	}
 	
 	public void setLineMap(Map<Integer, Integer> lineMap, int maxNumber) {
@@ -640,7 +642,9 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 		};
 		fCanvas.setBackground(getBackground(fCanvas.getDisplay()));
 		fCanvas.setForeground(fForeground);
-
+		
+		//fCanvas.setCursor(new Cursor(fCanvas.getDisplay(), SWT.CURSOR_HAND));
+		
 		fCanvas.addPaintListener(new PaintListener() {
 			public void paintControl(PaintEvent event) {
 				if (fCachedTextViewer != null)

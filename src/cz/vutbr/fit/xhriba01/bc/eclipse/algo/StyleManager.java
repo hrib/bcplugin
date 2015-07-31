@@ -5,6 +5,7 @@ import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jface.util.IPropertyChangeListener;
 import org.eclipse.jface.util.PropertyChangeEvent;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.editors.text.EditorsUI;
 
 public final class StyleManager implements IPropertyChangeListener {
 	
@@ -21,6 +22,8 @@ public final class StyleManager implements IPropertyChangeListener {
 		fStyle = createNewStyle();
 		PlatformUI.getWorkbench().getThemeManager().getCurrentTheme().getFontRegistry().addListener(this);
 		PreferenceConstants.getPreferenceStore().addPropertyChangeListener(this);
+		PlatformUI.getPreferenceStore().addPropertyChangeListener(this);
+		EditorsUI.getPreferenceStore().addPropertyChangeListener(this);
 		fStyleListeners = new ListenerList();
 	}
 	

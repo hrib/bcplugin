@@ -189,7 +189,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		fJavaElement = javaElement;
 		fEditor = editor;
 		
-		System.out.println(Utils.inputStreamToString(javaSource.getContent()));
+		//System.out.println(Utils.inputStreamToString(javaSource.getContent()));
 		
 		fJob = new WorkJob("Bytecode job", fStyle, this, javaSource, classContainer, options);
 		

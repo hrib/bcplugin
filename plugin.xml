@@ -10,9 +10,10 @@
          point="org.eclipse.ui.views">
       <category
             id="cz.vutbr.fit.xhriba01.bc.eclipse"
-            name="Bytecode">
+            name="Bcplugin">
       </category>
       <view
+            allowMultiple="false"
             category="cz.vutbr.fit.xhriba01.bc.eclipse"
             class="cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView"
             id="cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView"

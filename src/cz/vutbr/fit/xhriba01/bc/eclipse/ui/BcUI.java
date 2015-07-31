@@ -192,7 +192,7 @@ public class BcUI implements IWindowListener {
 					return;
 				}
 				
-				handleJavaEditorActivatedEvent(javaElement, (IEditorPart) part);
+				handleJavaEditorChange((ICompilationUnit)javaElement, (IEditorPart) part);
 				
 				fJavaElement = javaElement;
 				
@@ -200,6 +200,7 @@ public class BcUI implements IWindowListener {
 			}
 			else if (editorType == EDITOR_TYPE.CLASS) {
 				
+				/*
 				IJavaElement javaElement = BcUtils.getEditorJavaElement((IEditorPart) part);
 				
 				if (javaElement == null || (fJavaElement != null && fJavaElement.equals(javaElement))) {
@@ -211,11 +212,13 @@ public class BcUI implements IWindowListener {
 				fJavaElement = javaElement;
 				
 				//fBytecodeView.test(javaElement);
+				 * 
+				 */
 			}
 				
 		}
 		
-		private void handleJavaEditorActivatedEvent(IJavaElement javaElement, IEditorPart editor) {
+		private void handleJavaEditorChange(ICompilationUnit compilationUnit, IEditorPart editor) {
 			//sync(BcUtils.getEditorJavaElement(editor));
 			
 			/*
@@ -239,7 +242,6 @@ public class BcUI implements IWindowListener {
 				
 			}, 0, true);
 			*/
-			ICompilationUnit compilationUnit = (ICompilationUnit) javaElement;
 			
 			IClassFromJavaStrategy[] strategies = new IClassFromJavaStrategy[] {
 					new SourceDirectoryStrategy()
@@ -273,7 +275,7 @@ public class BcUI implements IWindowListener {
 				return;
 			}
 			
-			fBytecodeView.setInput(javaFile, classContainer, javaElement, editor, null);
+			fBytecodeView.setInput(javaFile, classContainer, compilationUnit, editor, null);
 			
 		}
 		

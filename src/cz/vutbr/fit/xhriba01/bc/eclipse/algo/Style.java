@@ -1,5 +1,7 @@
 package cz.vutbr.fit.xhriba01.bc.eclipse.algo;
 
+import org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlighting;
+import org.eclipse.jdt.internal.ui.javaeditor.SemanticHighlightings;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jdt.ui.PreferenceConstants;
 import org.eclipse.jdt.ui.text.IColorManager;
@@ -55,6 +57,10 @@ public class Style {
 	
 	public TextStyle ANNOTATION_KEYWORD;
 	
+	public TextStyle ANNOTATION_NAME;
+	
+	public TextStyle KEY;
+	
 	private Font fFont;
 	
 	private Color fSelectedLineColor;
@@ -89,15 +95,31 @@ public class Style {
 		KEYWORD.foreground = jdtColors.getColor(PreferenceConstants.EDITOR_JAVA_KEYWORD_COLOR);
 		KEYWORD.font = keywordDesc.createFont(display);
 		
+		FontDescriptor keyDesc = baseDesc;
+		keyDesc = keyDesc.setStyle(SWT.ITALIC);
+		KEY = new TextStyle();
+		KEY.font = keyDesc.createFont(display);
+		
+		FontDescriptor fieldNameDesc = baseDesc;
+		FIELD_NAME = new TextStyle();
+		FIELD_NAME.font = fieldNameDesc.createFont(display);
+		FIELD_NAME.foreground = jdtColors.getColor(getPreferenceColorKeyForHigh(SemanticHighlightings.FIELD));
+		
 		FontDescriptor offsetDesc = baseDesc;
 		offsetDesc = offsetDesc.setStyle(SWT.BOLD);
 		OFFSET = new TextStyle();
 		OFFSET.font = offsetDesc.createFont(display);
 		OFFSET.foreground = Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
 		
+		FontDescriptor annoNameDesc = baseDesc;
+		ANNOTATION_NAME = new TextStyle();
+		ANNOTATION_NAME.font = annoNameDesc.createFont(display);
+		ANNOTATION_NAME.foreground = jdtColors.getColor(getPreferenceColorKeyForHigh(SemanticHighlightings.ANNOTATION));
+		
 		INSTRUCTION = KEYWORD;
 		METHOD_ACCESS = KEYWORD;
 		ANNOTATION_KEYWORD = KEYWORD;
+		TYPE_PRIMITIVE = KEYWORD;
 		
 		FontDescriptor commentDesc = baseDesc;
 		if (prefs.getBoolean(PreferenceConstants.EDITOR_MULTI_LINE_COMMENT_BOLD)) {
@@ -127,6 +149,19 @@ public class Style {
 				
 		fLineNumberRulerColor = new Color(display, PreferenceConverter.getColor(prefs, AbstractDecoratedTextEditorPreferenceConstants.EDITOR_LINE_NUMBER_RULER_COLOR));
 		
+	}
+	
+	private String getPreferenceColorKeyForHigh(String val) {
+		
+		SemanticHighlighting[] highs = SemanticHighlightings.getSemanticHighlightings();
+		
+		for (SemanticHighlighting high : highs) {
+			if (high.getPreferenceKey() == val) {
+				return SemanticHighlightings.getColorPreferenceKey(high);
+			}
+		}
+		
+		return null;
 	}
 	
 	public Color getLineNumberRulerColor() {
