@@ -859,16 +859,18 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 	 * @since 3.0
 	 */
 	protected void paintLine(int line, int y, int lineheight, GC gc, Display display) {
-		int widgetLine= JFaceTextUtil.modelLineToWidgetLine(fCachedTextViewer, line);
-		int sourceLine = fLineMap.getTo(line+1);
-		if (sourceLine == Utils.INVALID_LINE) return;
-		String s= createDisplayString(sourceLine);
-		int indentation= fIndentation[s.length()];
-		int baselineBias= getBaselineBias(gc, widgetLine);
-		//gc.setBackground(fCanvas.getDisplay().getSystemColor(SWT.COLOR_RED));
-		//gc.fillRectangle(0, y, fCanvas.getSize().x, lineheight);
-		//gc.setBackground(this.fForeground);
-		gc.drawString(s, indentation, y + baselineBias, true);
+		if (fLineMap != null) {
+			int widgetLine= JFaceTextUtil.modelLineToWidgetLine(fCachedTextViewer, line);
+			int sourceLine = fLineMap.getTo(line+1);
+			if (sourceLine == Utils.INVALID_LINE) return;
+			String s= createDisplayString(sourceLine);
+			int indentation= fIndentation[s.length()];
+			int baselineBias= getBaselineBias(gc, widgetLine);
+			//gc.setBackground(fCanvas.getDisplay().getSystemColor(SWT.COLOR_RED));
+			//gc.fillRectangle(0, y, fCanvas.getSize().x, lineheight);
+			//gc.setBackground(this.fForeground);
+			gc.drawString(s, indentation, y + baselineBias, true);
+		}
 	}
 
 	/**

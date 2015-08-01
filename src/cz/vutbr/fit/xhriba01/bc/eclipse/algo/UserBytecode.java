@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jdt.core.Flags;
@@ -13,7 +14,11 @@ import org.eclipse.jdt.ui.text.IColorManager;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.TextPresentation;
+import org.eclipse.jface.text.source.AnnotationModel;
+import org.eclipse.jface.text.source.projection.ProjectionAnnotation;
+import org.eclipse.jface.text.source.projection.ProjectionAnnotationModel;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.graphics.TextStyle;
 import org.objectweb.asm.Opcodes;
@@ -76,9 +81,17 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		private Style STYLE;
 		
+		private List<Position> fProjectionPositions = new ArrayList<>();
+		
+		private Stack<Integer> fProjectionContexts = new Stack<Integer>();
+		
 		public UserBytecodeDocument(Style style) {
 			super();
 			STYLE = style;
+		}
+		
+		public List<Position> getProjectionPositions() {
+			return fProjectionPositions;
 		}
 		
 		public int getMaxLineNumber() {
@@ -246,6 +259,18 @@ public class UserBytecode extends AbstractNodeVisitor {
 		}
 		
 		public void startContext() {
+			startContext(false);
+		}
+		
+		public void startContext(boolean projection) {
+			
+			if (projection) {
+				fProjectionContexts.push(this.getLength()-1);
+			}
+			else {
+				fProjectionContexts.push(Utils.INVALID_OFFSET);
+			}
+			
 			addColumn(START);
 			addLine();
 			increaseIndent();
@@ -254,6 +279,10 @@ public class UserBytecode extends AbstractNodeVisitor {
 		public void endContext() {
 			decreaseIndent();
 			addIndent();
+			int projStartOffset = fProjectionContexts.pop();
+			if (projStartOffset != Utils.INVALID_OFFSET) {
+				fProjectionPositions.add(new Position(projStartOffset, this.getLength()-1 - projStartOffset));
+			}
 			addColumn(END);
 		}
 		
@@ -627,7 +656,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		addInterfaces(classNode);
 		
-		fDocument.startContext();
+		fDocument.startContext(true);
 		
 		
 	}
@@ -700,7 +729,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		fDocument.addMethodParameters(nodeMethod);
 		
-		fDocument.startContext();
+		fDocument.startContext(true);
 		
 		
 		addMaxAndLocalsInfo(methodNode);

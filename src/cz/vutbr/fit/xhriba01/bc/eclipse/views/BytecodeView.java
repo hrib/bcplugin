@@ -2,6 +2,7 @@ package cz.vutbr.fit.xhriba01.bc.eclipse.views;
 
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +28,16 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.JFaceTextUtil;
+import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.text.projection.ProjectionDocument;
+import org.eclipse.jface.text.source.Annotation;
+import org.eclipse.jface.text.source.AnnotationModel;
+import org.eclipse.jface.text.source.IAnnotationModel;
+import org.eclipse.jface.text.source.projection.ProjectionAnnotation;
+import org.eclipse.jface.text.source.projection.ProjectionAnnotationModel;
+import org.eclipse.jface.text.source.projection.ProjectionViewer;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ISelectionProvider;
@@ -48,6 +57,7 @@ import cz.vutbr.fit.xhriba01.bc.eclipse.algo.StyleManager;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.WorkJob;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.WorkJobListener;
 import cz.vutbr.fit.xhriba01.bc.eclipse.ui.BytecodeViewer;
+import cz.vutbr.fit.xhriba01.bc.eclipse.ui.BytecodeViewerConfiguration;
 import cz.vutbr.fit.xhriba01.bc.eclipse.ui.MappedLineNumberRulerColumn;
 import cz.vutbr.fit.xhriba01.bc.lib.IClassContainer;
 import cz.vutbr.fit.xhriba01.bc.lib.IFile;
@@ -256,9 +266,23 @@ public class BytecodeView extends ViewPart implements IStyleListener, ISelection
 	
 	private void handleDocument(UserBytecodeDocument doc) {
 		
-		fBytecodeViewer.setDocument(doc);
+		fBytecodeViewer.setDocument(doc, new AnnotationModel());
 		
-		TextPresentation.applyTextPresentation(doc.getTextPresentation(), fBytecodeViewer.getTextWidget());
+		fBytecodeViewer.configure(new BytecodeViewerConfiguration(doc.getTextPresentation()));
+		
+		fBytecodeViewer.enableProjection();
+		
+		ProjectionAnnotationModel paModel = fBytecodeViewer.getProjectionAnnotationModel();
+		
+		HashMap<Annotation, Position> map = new HashMap<>();
+		
+		for (Position pos : doc.getProjectionPositions()) {
+			map.put(new ProjectionAnnotation(), pos);
+		}
+		
+		paModel.modifyAnnotations(null, map, null);
+		
+		//TextPresentation.applyTextPresentation(doc.getTextPresentation(), fBytecodeViewer.getTextWidget());
 		
 		fMappedLineNumberRulerColumn.setLineMap(doc.getLineMap());
 		
@@ -274,6 +298,8 @@ public class BytecodeView extends ViewPart implements IStyleListener, ISelection
 		fShouldRefresh = false;
 		fResult = null;
 		fOptions = null;
+		fBytecodeViewer.disableProjection();
+		fBytecodeViewer.unconfigure();
 		
 		if (this.fJavaEditorMouseListener != null) {
 			// remove java styled text mouse listener
