@@ -341,9 +341,13 @@ public class BytecodeView extends ViewPart implements IStyleListener, ISelection
 		}
 		
 		
+		/*
 		if (fJob != null) {
 			clean();
 		}
+		*/
+		
+		clean();
 		
 		fOptions = options;
 		fJavaElement = javaElement;

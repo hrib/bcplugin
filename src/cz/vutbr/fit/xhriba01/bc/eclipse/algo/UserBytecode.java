@@ -279,11 +279,11 @@ public class UserBytecode extends AbstractNodeVisitor {
 		public void endContext() {
 			decreaseIndent();
 			addIndent();
+			addColumn(END);
 			int projStartOffset = fProjectionContexts.pop();
 			if (projStartOffset != Utils.INVALID_OFFSET) {
-				fProjectionPositions.add(new Position(projStartOffset, this.getLength()-1 - projStartOffset));
+				fProjectionPositions.add(new Position(projStartOffset, this.getLength()+1 - projStartOffset));
 			}
-			addColumn(END);
 		}
 		
 		public void addColumn(String text) {
@@ -1219,15 +1219,15 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		for (int i = 0; i < len; i++) {
 			fDocument.startLine();
-			fDocument.add("[" + key.get(i).toString() + "] : ");
-			fDocument.add(Integer.toString(labels.get(i).getLabel().getOffsetInMethod()));
+			fDocument.add(key.get(i).toString() + " : ");
+			fDocument.add(STYLE.OFFSET, formatOffset(labels.get(i).getLabel().getOffsetInMethod()));
 			fDocument.add(fDocument.LINE);
 		}
 		
 		fDocument.startLine();
 		
 		fDocument.add(STYLE.KEYWORD, "default : ");
-		fDocument.add(Integer.toString(insn.dflt.getLabel().getOffsetInMethod()));
+		fDocument.add(STYLE.OFFSET, formatOffset(insn.dflt.getLabel().getOffsetInMethod()));
 		fDocument.add(fDocument.LINE);
 		
 		fDocument.endContext();
@@ -1341,7 +1341,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		fDocument.startLine();
 		
 		fDocument.add(STYLE.KEYWORD, "default : ");
-		fDocument.add(Integer.toString(insn.dflt.getLabel().getOffsetInMethod()));
+		fDocument.add(STYLE.OFFSET, formatOffset(insn.dflt.getLabel().getOffsetInMethod()));
 		fDocument.add(fDocument.LINE);
 		
 		fDocument.endContext();
