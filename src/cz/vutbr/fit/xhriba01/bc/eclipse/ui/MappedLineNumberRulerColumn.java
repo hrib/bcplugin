@@ -54,7 +54,9 @@ import org.eclipse.jface.text.source.IAnnotationModel;
 import org.eclipse.jface.text.source.ILineRange;
 import org.eclipse.jface.text.source.IVerticalRulerColumn;
 
+import cz.vutbr.fit.xhriba01.bc.eclipse.algo.LineMap;
 import cz.vutbr.fit.xhriba01.bc.eclipse.views.BytecodeView;
+import cz.vutbr.fit.xhriba01.bc.lib.Utils;
 
 
 /**
@@ -432,7 +434,7 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 	 * @since 3.0
 	 */
 	
-	private Map<Integer, Integer> fLineMap = new HashMap<Integer, Integer>();
+	private LineMap fLineMap;
 	
 	private int fMaxNumber = 0;
 	
@@ -454,15 +456,20 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 		
 	}
 	
-	public void setLineMap(Map<Integer, Integer> lineMap, int maxNumber) {
+	public void setLineMap(LineMap lineMap) {
 		fLineMap = lineMap;
-		fMaxNumber = maxNumber;
+		if (lineMap != null) {
+			fMaxNumber = lineMap.getMaxFrom();
+		}
+		else {
+			fMaxNumber = Utils.INVALID_LINE;
+		}
 		updateNumberOfDigits();
 		computeIndentations();
 		layout(false);
 	}
 	
-	public Map<Integer, Integer> getLineMap() {
+	public LineMap getLineMap() {
 		return fLineMap;
 	}
 	
@@ -554,6 +561,11 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 	protected int computeNumberOfDigits() {
 
 		int digits= 2;
+		
+		if (fMaxNumber == Utils.INVALID_LINE) {
+			return digits;
+		}
+		
 		while (fMaxNumber > Math.pow(10, digits) -1) {
 			++digits;
 		}
@@ -643,7 +655,7 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 		fCanvas.setBackground(getBackground(fCanvas.getDisplay()));
 		fCanvas.setForeground(fForeground);
 		
-		//fCanvas.setCursor(new Cursor(fCanvas.getDisplay(), SWT.CURSOR_HAND));
+		fCanvas.setCursor(new Cursor(fCanvas.getDisplay(), SWT.CURSOR_HAND));
 		
 		fCanvas.addPaintListener(new PaintListener() {
 			public void paintControl(PaintEvent event) {
@@ -848,11 +860,14 @@ public class MappedLineNumberRulerColumn implements IVerticalRulerColumn {
 	 */
 	protected void paintLine(int line, int y, int lineheight, GC gc, Display display) {
 		int widgetLine= JFaceTextUtil.modelLineToWidgetLine(fCachedTextViewer, line);
-		Integer sourceLine = fLineMap.get(line+1);
-		if (sourceLine == null) return;
+		int sourceLine = fLineMap.getTo(line+1);
+		if (sourceLine == Utils.INVALID_LINE) return;
 		String s= createDisplayString(sourceLine);
 		int indentation= fIndentation[s.length()];
 		int baselineBias= getBaselineBias(gc, widgetLine);
+		//gc.setBackground(fCanvas.getDisplay().getSystemColor(SWT.COLOR_RED));
+		//gc.fillRectangle(0, y, fCanvas.getSize().x, lineheight);
+		//gc.setBackground(this.fForeground);
 		gc.drawString(s, indentation, y + baselineBias, true);
 	}
 

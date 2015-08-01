@@ -70,7 +70,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		private String fIndent = "";
 		
-		private Map<Integer, Integer> fLineMap = new HashMap<>();
+		private LineMap fLineMap = new LineMap();
 		
 		private int fMaxLineNumber = 1;
 		
@@ -85,7 +85,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 			return fMaxLineNumber;
 		}
 		
-		public Map<Integer, Integer> getLineMap() {
+		public LineMap getLineMap() {
 			return fLineMap;
 		}
 		
@@ -99,7 +99,7 @@ public class UserBytecode extends AbstractNodeVisitor {
 		
 		public void addToLineMap(int bytecodeViewerLine, int javaEditorLine) {
 			if (javaEditorLine == Utils.INVALID_LINE || javaEditorLine == 1) return;
-			fLineMap.put(bytecodeViewerLine, javaEditorLine);
+			fLineMap.add(bytecodeViewerLine, javaEditorLine);
 			if (javaEditorLine > fMaxLineNumber) {
 				fMaxLineNumber = javaEditorLine;
 			}

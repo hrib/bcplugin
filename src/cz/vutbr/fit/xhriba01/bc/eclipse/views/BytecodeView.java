@@ -2,40 +2,48 @@ package cz.vutbr.fit.xhriba01.bc.eclipse.views;
 
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
+import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.part.*;
 import org.eclipse.ui.progress.IWorkbenchSiteProgressService;
 import org.eclipse.ui.texteditor.AbstractDecoratedTextEditor;
 import org.eclipse.ui.texteditor.IDocumentProvider;
+import org.eclipse.core.runtime.ListenerList;
 import org.eclipse.core.runtime.jobs.IJobChangeEvent;
 import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.IClassFile;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.ui.ISharedImages;
 import org.eclipse.jdt.ui.JavaUI;
-import org.eclipse.jdt.ui.cleanup.CleanUpContext;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.JFaceTextUtil;
 import org.eclipse.jface.text.TextPresentation;
+import org.eclipse.jface.text.TextViewer;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.ISelectionProvider;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.Style;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.StyleChangeEvent;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.UserBytecode;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.UserBytecode.UserBytecodeDocument;
+import cz.vutbr.fit.xhriba01.bc.eclipse.BcUtils;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.FastWorkJob;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.IStyleListener;
+import cz.vutbr.fit.xhriba01.bc.eclipse.algo.LineMap;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.StyleManager;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.WorkJob;
 import cz.vutbr.fit.xhriba01.bc.eclipse.algo.WorkJobListener;
@@ -47,7 +55,7 @@ import cz.vutbr.fit.xhriba01.bc.lib.Result;
 import cz.vutbr.fit.xhriba01.bc.lib.Utils;
 
 
-public class BytecodeView extends ViewPart implements IStyleListener {
+public class BytecodeView extends ViewPart implements IStyleListener, ISelectionProvider {
 
 	/**
 	 * The ID of the view as specified by the extension.
@@ -76,11 +84,92 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 	
 	private boolean fDisposed;
 	
+	private ListenerList fSelectionListeners = new ListenerList(ListenerList.IDENTITY);
+	
+	private MouseListener fJavaEditorMouseListener;
+	
+	private IStructuredSelection fSelection = StructuredSelection.EMPTY;
+	
+	private class JavaEditorMouseListener extends MouseAdapter {
+			
+		@Override
+		public void mouseUp(MouseEvent e) {
+			
+			if (fEditor == null) return;
+			
+			IDocument doc = BcUtils.getEditorDocument(getJavaEditor());
+				
+			if (doc == null) return;
+				
+			StyledText widget = BcUtils.getEditorStyledText(getJavaEditor());
+					
+			if (widget == null) return;
+						
+			int lineIndex = widget.getLineIndex(e.y);
+						
+			TextViewer viewer = BcUtils.getEditorTextViewer(getJavaEditor());
+						
+			if (viewer == null) return;
+							
+			int modelLine = JFaceTextUtil.widgetLine2ModelLine(viewer, lineIndex);
+							
+			if (modelLine == -1) return;
+			
+			handleJavaLineSelected(modelLine);
+			
+		}
+		
+	};
+	
 	/**
 	 * The constructor.
 	 */
 	public BytecodeView() {
 		
+	}
+	
+	private void handleJavaLineSelected(int javaLine) {
+		
+		LineMap lineMap = fMappedLineNumberRulerColumn.getLineMap();
+		
+		removeSelectedLineIndexes();
+		
+		if (lineMap == null) return;
+		
+		List<Integer> froms = lineMap.getFrom(widgetLineIndexToLineMap(javaLine));
+		
+		if (froms.isEmpty()) {
+			return;
+		}
+		
+		for (int from : froms) {
+			
+			addSelectedLineIndex(lineMapLineToWidgetLine(from));
+			
+		}
+		
+		int firstFrom = froms.get(0);
+		int lastFrom = froms.get(froms.size()-1);
+		
+		IDocument doc = fBytecodeViewer.getDocument();
+		
+		try {
+		
+			int firstLineOffset = doc.getLineOffset(firstFrom);
+			int lastLineOffset = doc.getLineOffset(lastFrom);
+			
+			fBytecodeViewer.revealRange(firstLineOffset, lastLineOffset-firstLineOffset);
+			
+		} 
+		catch (BadLocationException e) {
+			e.printStackTrace();
+			return;
+		}
+		
+	}
+	
+	private int lineMapLineToWidgetLine(int lineMapLine) {
+		return lineMapLine-1;
 	}
 	
 	public IJavaElement getJavaElement() {
@@ -128,7 +217,40 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 		handleDocument(doc);
 		
+		if (this.fJavaEditorMouseListener == null) {
+			// register mouse listener on java editor to handle mouse click (line selections)
+			StyledText javaWidget = getJavaStyledText();
+			
+			if (javaWidget != null) {
+				
+				this.fJavaEditorMouseListener = new JavaEditorMouseListener();
+				
+				javaWidget.addMouseListener(this.fJavaEditorMouseListener);
+				
+			}
+			
+			
+		}
+		
 		System.out.println("##job result handled!!");
+		
+	}
+	
+	/**
+	 * Returns StyledText widget for currently used AbstractTextEditor
+	 * @return StyledText or null
+	 */
+	private StyledText getJavaStyledText() {
+		
+		if (this.fEditor != null) {
+			
+			StyledText javaWidget = (StyledText)this.getJavaEditor().getAdapter(Control.class);
+			
+			return javaWidget;
+			
+		}
+		
+		return null;
 		
 	}
 	
@@ -138,7 +260,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 		TextPresentation.applyTextPresentation(doc.getTextPresentation(), fBytecodeViewer.getTextWidget());
 		
-		fMappedLineNumberRulerColumn.setLineMap(doc.getLineMap(), doc.getMaxLineNumber());
+		fMappedLineNumberRulerColumn.setLineMap(doc.getLineMap());
 		
 		fMappedLineNumberRulerColumn.redraw();
 		
@@ -151,10 +273,22 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		fEditor = null;
 		fShouldRefresh = false;
 		fResult = null;
+		fOptions = null;
+		
+		if (this.fJavaEditorMouseListener != null) {
+			// remove java styled text mouse listener
+			StyledText javaWidget = this.getJavaStyledText();
+			
+			if (javaWidget != null) {
+				javaWidget.removeMouseListener(this.fJavaEditorMouseListener);
+			}
+			
+			this.fJavaEditorMouseListener = null;
+		}
+		
 		if (!fDisposed) {
 			fSelectedLines = new ArrayList<Integer>();
-			fMappedLineNumberRulerColumn.setLineMap(new HashMap<Integer, Integer>(), 0);
-			fOptions = null;
+			fMappedLineNumberRulerColumn.setLineMap(null);
 			fBytecodeViewer.setDocument(new Document(""));
 		}
 	}
@@ -291,6 +425,8 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		StyledText widget = fBytecodeViewer.getTextWidget();
 		
 		widget.setLineBackground(line, 1 , fStyle.getSelectedLineBackgroundColor());
+		
+		
 	}
 	
 	private void removeSelectedLineIndexes() {
@@ -335,7 +471,7 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 	
 	public void handleLineSelect(int line) {
 		
-		Map<Integer, Integer> lineMap = fMappedLineNumberRulerColumn.getLineMap();
+		LineMap lineMap = fMappedLineNumberRulerColumn.getLineMap();
 		
 		if (lineMap == null) {
 			removeSelectedLineIndexes();
@@ -345,9 +481,9 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		
 		int lineMapLine = widgetLineIndexToLineMap(line);
 		
-		Integer javaLine = lineMap.get(lineMapLine);
+		int javaLine = lineMap.getTo(lineMapLine);
 		
-		if (javaLine == null) {
+		if (javaLine == Utils.INVALID_LINE) {
 			removeSelectedLineIndexes();
 			return;
 		}
@@ -357,7 +493,26 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 		addSelectedLineIndex(line);
 		
 		highlightInJavaEditor(javaLine);
+		
+		fireLineSelectionChanged();
 				
+	}
+	
+	private void fireLineSelectionChanged() {
+		
+		if (this.fSelectedLines.isEmpty()) {
+			this.fSelection = StructuredSelection.EMPTY;
+		}
+		else {
+			this.fSelection = new StructuredSelection(this.fSelectedLines);
+		}
+		
+		for (Object listener : this.fSelectionListeners.getListeners()) {
+			
+			((ISelectionChangedListener) listener).selectionChanged(new SelectionChangedEvent(this, this.fSelection));
+			
+		}
+		
 	}
 	
 	public AbstractDecoratedTextEditor getJavaEditor() {
@@ -412,6 +567,31 @@ public class BytecodeView extends ViewPart implements IStyleListener {
 			
 		}
 		
+	}
+
+	@Override
+	public void addSelectionChangedListener(ISelectionChangedListener listener) {
+		// TODO Auto-generated method stub
+		this.fSelectionListeners.add(listener);
+	}
+
+	@Override
+	public ISelection getSelection() {
+		// TODO Auto-generated method stub
+		return this.fSelection;
+	}
+
+	@Override
+	public void removeSelectionChangedListener(ISelectionChangedListener listener) {
+		// TODO Auto-generated method stub
+		this.fSelectionListeners.remove(listener);
+	}
+
+	@Override
+	public void setSelection(ISelection selection) {
+		// TODO Auto-generated method stub
+		this.fSelection = (IStructuredSelection) selection;
+		fireLineSelectionChanged();
 	}
 
 }
