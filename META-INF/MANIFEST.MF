@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Eclipse
-Bundle-SymbolicName: cz.vutbr.fit.xhriba01.bc.eclipse;singleton:=true
-Bundle-Version: 1.0.0
+Bundle-Name: bcplugin
+Bundle-SymbolicName: bcplugin;singleton:=true
+Bundle-Version: 0.1.0
 Bundle-Activator: cz.vutbr.fit.xhriba01.bc.eclipse.BcPlugin
 Bundle-Vendor: Jaromír Hřibal
 Require-Bundle: org.eclipse.ui,
@@ -14,10 +14,10 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.core.resources,
  org.eclipse.core.jobs,
  org.eclipse.ui.views,
- asmlib,
  org.eclipse.jdt.ui,
+ asm,
  bclib
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: lib/,
- .
+Bundle-ClassPath: .,
+ lib/commons-lang3-3.4.jar
