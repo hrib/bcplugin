@@ -10,7 +10,7 @@
          point="org.eclipse.ui.views">
       <category
             id="cz.vutbr.fit.xhriba01.bc.eclipse"
-            name="Bcplugin">
+            name="Bytecode Show">
       </category>
       <view
             allowMultiple="false"
